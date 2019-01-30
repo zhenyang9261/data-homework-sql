@@ -154,59 +154,31 @@ WHERE address_id IN (
         
 
 -- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. Identify all movies categorized as family films.
-SELECT title AS 'Family Movies'
-FROM film
-WHERE film_id IN (
-	SELECT film_id 
-    FROM film_category
-    WHERE category_id IN (
-		SELECT category_id
-        FROM category
-        WHERE name='Family'
-        )
-	);
 
+DROP TABLE IF EXISTS temp_rental;
 
--- 7e. Display the most frequently rented movies in descending order.
-SELECT f.title AS 'Movie Name', inv_rental.rental_count AS 'Number of Rentals'
-FROM film f
-WHERE f.film_id = (
-	SELECT film_id 
-    FROM inventory
-    WHERE inventory_id = (
-		SELECT MAX(inv_rental.rental_count)
-        FROM (
-			SELECT COUNT(rental_id) AS rental_count, inventory_id
-			FROM rental
-			GROUP BY inventory_id
-			) inv_rental
-		)
-	)
-ORDER BY inv_rental.rental_count DSC; 
-
-SELECT inv_rental.inventory_id 
-FROM (
+CREATE TABLE temp_rental AS
 	SELECT COUNT(rental_id) AS rental_count, inventory_id
 	FROM rental
-	GROUP BY inventory_id
-	) inv_rental
-WHERE inv_rental.rental_count = (
-	SELECT MAX(inv_rental.rental_count)
-    FROM inv_rental
-);
+	GROUP BY inventory_id;
 
-SELECT inv_rental.inventory_id  
-FROM (
-			SELECT COUNT(rental_id) AS rental_count, inventory_id
-			FROM rental
-			GROUP BY inventory_id
-			) inv_rental
-WHERE inv_rental.rental_count = (
-	SELECT MAX(inv_rental.rental_count) 
-    FROM inv_rental)
+SELECT count(film_id) -- title AS 'Movie Name'
+FROM film 
+WHERE film_id IN (
+	SELECT film_id 
+    FROM inventory
+    WHERE inventory_id IN (
+		SELECT inventory_id
+		FROM temp_rental
+		WHERE rental_count = (
+			SELECT MAX(rental_count)
+			FROM temp_rental
+			)
+		)
+	);
+ORDER BY title DESC;
 
-
-
+DROP TABLE IF EXISTS temp_rental;
 
 7f. Write a query to display how much business, in dollars, each store brought in.
 7g. Write a query to display for each store its store ID, city, and country.
