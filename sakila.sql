@@ -154,36 +154,145 @@ WHERE address_id IN (
         
 
 -- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. Identify all movies categorized as family films.
+SELECT title AS 'Family Movies'
+FROM film
+WHERE film_id IN (
+	SELECT film_id 
+    FROM film_category
+    WHERE category_id IN (
+		SELECT category_id  
+        FROM category
+        WHERE UPPER(name) = 'FAMILY'
+	)
+);
 
+-- 7e. Display the most frequently rented movies in descending order.
 DROP TABLE IF EXISTS temp_rental;
 
 CREATE TABLE temp_rental AS
 	SELECT COUNT(rental_id) AS rental_count, inventory_id
 	FROM rental
-	GROUP BY inventory_id;
+	GROUP BY inventory_id
+    ORDER BY rental_count DESC;
 
-SELECT count(film_id) -- title AS 'Movie Name'
+
+SELECT f.title
+FROM film f
+JOIN (
+SELECT i.inventory_id, i.film_id, temp.rental_count
+FROM inventory i
+JOIN (
+	SELECT COUNT(rental_id) AS rental_count, inventory_id
+	FROM rental
+	GROUP BY inventory_id
+) temp
+ON i.inventory_id = temp.inventory_id
+ORDER BY temp.rental_count DESC
+) i
+ON f.film_id = i.film_id;
+
+SELECT i.inventory_id, i.film_id, temp.rental_count
+FROM inventory i
+JOIN (
+	SELECT COUNT(rental_id) AS rental_count, inventory_id
+	FROM rental
+	GROUP BY inventory_id
+) temp
+ON i.inventory_id = temp.inventory_id
+ORDER BY temp.rental_count DESC;
+
+
+
+SELECT title AS 'Movie Name'
 FROM film 
 WHERE film_id IN (
 	SELECT film_id 
     FROM inventory
     WHERE inventory_id IN (
-		SELECT inventory_id
-		FROM temp_rental
-		WHERE rental_count = (
-			SELECT MAX(rental_count)
-			FROM temp_rental
-			)
-		)
+		SELECT temp_rental.inventory_id, temp_rental.rental_count
+		FROM (
+			SELECT COUNT(rental_id) AS rental_count, inventory_id
+			FROM rental
+			GROUP BY inventory_id
+		) temp_rental
 	);
 ORDER BY title DESC;
 
 DROP TABLE IF EXISTS temp_rental;
 
-7f. Write a query to display how much business, in dollars, each store brought in.
-7g. Write a query to display for each store its store ID, city, and country.
-7h. List the top five genres in gross revenue in descending order. (Hint: you may need to use the following tables: category, film_category, inventory, payment, and rental.)
-8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view.
-8b. How would you display the view that you created in 8a?
-8c. You find that you no longer need the view top_five_genres. Write a query to delete it.
+-- 7f. Write a query to display how much business, in dollars, each store brought in.
+SELECT  s.store_id AS 'Store ID', SUM(p.total_amount) AS 'Total Payment Amount ($)'
+FROM staff s
+LEFT JOIN (
+	SELECT SUM(amount) AS total_amount, staff_id
+	FROM payment
+	GROUP BY staff_id) p 
+ON s.staff_id = p.staff_id
+GROUP by s.store_id;
 
+-- 7g. Write a query to display for each store its store ID, city, and country.
+SELECT s.store_id AS 'Store ID', c.city AS 'City', co.country AS 'Country'
+FROM store s
+LEFT JOIN address a ON s.address_id = a.address_id
+LEFT JOIN city c ON a.city_id = c.city_id
+LEFT JOIN country co ON c.country_id = co.country_id;
+
+-- 7h. List the top five genres in gross revenue in descending order. (Hint: you may need to use the following tables: category, film_category, inventory, payment, and rental.)
+SELECT name AS 'Topy 5 Genres in Gross Revenue'
+FROM category 
+WHERE category_id IN (
+	SELECT category_id
+    FROM film_category
+    WHERE film_id IN (
+		SELECT film_id
+        FROM inventory 
+        WHERE inventory_id IN (
+			SELECT inventory_id
+            FROM rental
+			WHERE rental_id IN (
+				SELECT t.rental_id
+                FROM (
+					SELECT SUM(amount) AS sum_amount, rental_id
+					FROM payment
+					GROUP BY rental_id
+					ORDER BY sum_amount DESC
+					LIMIT 5
+				) t
+			)
+		)
+	)
+);
+ 
+-- 8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view.
+CREATE VIEW top_5_genres_view AS 
+SELECT name AS 'Topy 5 Genres in Gross Revenue'
+FROM category 
+WHERE category_id IN (
+	SELECT category_id
+    FROM film_category
+    WHERE film_id IN (
+		SELECT film_id
+        FROM inventory 
+        WHERE inventory_id IN (
+			SELECT inventory_id
+            FROM rental
+			WHERE rental_id IN (
+				SELECT t.rental_id
+                FROM (
+					SELECT SUM(amount) AS sum_amount, rental_id
+					FROM payment
+					GROUP BY rental_id
+					ORDER BY sum_amount DESC
+					LIMIT 5
+				) t
+			)
+		)
+	)
+);
+
+-- 8b. How would you display the view that you created in 8a?
+SELECT *
+FROM top_5_genres_view;
+ 
+-- 8c. You find that you no longer need the view top_five_genres. Write a query to delete it.
+DROP view top_5_genres_view;
