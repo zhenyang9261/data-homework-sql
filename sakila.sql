@@ -172,36 +172,7 @@ DROP TABLE IF EXISTS temp_rental;
 CREATE TABLE temp_rental AS
 	SELECT COUNT(rental_id) AS rental_count, inventory_id
 	FROM rental
-	GROUP BY inventory_id
-    ORDER BY rental_count DESC;
-
-
-SELECT f.title
-FROM film f
-JOIN (
-SELECT i.inventory_id, i.film_id, temp.rental_count
-FROM inventory i
-JOIN (
-	SELECT COUNT(rental_id) AS rental_count, inventory_id
-	FROM rental
-	GROUP BY inventory_id
-) temp
-ON i.inventory_id = temp.inventory_id
-ORDER BY temp.rental_count DESC
-) i
-ON f.film_id = i.film_id;
-
-SELECT i.inventory_id, i.film_id, temp.rental_count
-FROM inventory i
-JOIN (
-	SELECT COUNT(rental_id) AS rental_count, inventory_id
-	FROM rental
-	GROUP BY inventory_id
-) temp
-ON i.inventory_id = temp.inventory_id
-ORDER BY temp.rental_count DESC;
-
-
+	GROUP BY inventory_id;
 
 SELECT title AS 'Movie Name'
 FROM film 
@@ -209,13 +180,14 @@ WHERE film_id IN (
 	SELECT film_id 
     FROM inventory
     WHERE inventory_id IN (
-		SELECT temp_rental.inventory_id, temp_rental.rental_count
-		FROM (
-			SELECT COUNT(rental_id) AS rental_count, inventory_id
-			FROM rental
-			GROUP BY inventory_id
-		) temp_rental
-	);
+		SELECT inventory_id
+		FROM temp_rental
+		WHERE rental_count = (
+			SELECT MAX(rental_count)
+			FROM temp_rental
+			)
+		)
+	)
 ORDER BY title DESC;
 
 DROP TABLE IF EXISTS temp_rental;
