@@ -5,6 +5,7 @@ SELECT first_name AS 'First Name', last_name AS 'Last Name'
 FROM actor;
 
 -- 1b. Display the first and last name of each actor in a single column in upper case letters. Name the column Actor Name.
+-- Ordered for easy retrieval
 SELECT CONCAT(UPPER(first_name), ' ', UPPER(last_name)) AS 'Actor Name'
 FROM actor;
 
@@ -31,7 +32,7 @@ WHERE country IN ('Afghanistan', 'Bangladesh', 'China')
 
 -- 3a. You want to keep a description of each actor. You don't think you will be performing queries on a description, so create a column in the table actor named description and use the data type BLOB (Make sure to research the type BLOB, as the difference between it and VARCHAR are significant).
 ALTER TABLE actor
-ADD description BLOB(300);
+ADD description BLOB;
 
 -- 3b. Very quickly you realize that entering descriptions for each actor is too much effort. Delete the description column.
 ALTER TABLE actor
@@ -46,7 +47,7 @@ GROUP BY last_name;
 SELECT last_name AS 'Last Name', COUNT(last_name) AS 'Count'
 FROM actor
 GROUP BY last_name
-HAVING count(last_name) >= 2;
+HAVING COUNT(last_name) >= 2;
 
 -- 4c. The actor HARPO WILLIAMS was accidentally entered in the actor table as GROUCHO WILLIAMS. Write a query to fix the record.
 UPDATE actor
@@ -84,8 +85,8 @@ ON s.staff_id = psum.staff_id;
 -- 6c. List each film and the number of actors who are listed for that film. Use tables film_actor and film. Use inner join.
 SELECT f.title AS 'Film', fa.actor_count AS 'Number of Actors'
 FROM film f
-INNER JOIN (
-	SELECT COUNT(actor_id) as 'actor_count', film_id 
+JOIN (
+	SELECT COUNT(actor_id) AS 'actor_count', film_id 
     FROM film_actor 
     GROUP BY film_id
     ) fa
@@ -103,8 +104,8 @@ WHERE film_id = (
 -- 6e. Using the tables payment and customer and the JOIN command, list the total paid by each customer. List the customers alphabetically by last name:
 SELECT c.first_name AS 'First Name', c.last_name AS 'Last Name', psum.total_amount AS 'Total Amount Paid'
 FROM customer c
-INNER JOIN (
-	SELECT sum(amount) as 'total_amount', customer_id 
+JOIN (
+	SELECT sum(amount) AS 'total_amount', customer_id 
     FROM payment 
     GROUP BY customer_id
     ) psum
@@ -136,23 +137,13 @@ WHERE actor_id IN (
 	);
     
 -- 7c. You want to run an email marketing campaign in Canada, for which you will need the names and email addresses of all Canadian customers. Use joins to retrieve this information.
-SELECT first_name AS 'First Name', last_name AS 'Last Name', email AS 'Email'
-FROM customer
-WHERE address_id IN (
-	SELECT address_id
-    FROM address
-    WHERE city_id IN (
-		SELECT city_id
-        FROM city
-        WHERE country_id = (
-			SELECT country_id
-            FROM country
-            WHERE country = 'Canada'
-            )
-		)
-	);
-        
-
+SELECT c.first_name AS 'First Name', c.last_name AS 'Last Name', c.email AS 'Email'
+FROM customer c
+JOIN address a ON c.address_id = a.address_id
+JOIN city ct ON a.city_id = ct.city_id
+JOIN country cty ON ct.country_id = cty.country_id
+WHERE cty.country = 'Canada';
+   
 -- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. Identify all movies categorized as family films.
 SELECT title AS 'Family Movies'
 FROM film
@@ -167,7 +158,7 @@ WHERE film_id IN (
 );
 
 -- 7e. Display the most frequently rented movies in descending order.
-SELECT f.title AS 'Movie', count(f.film_id) AS 'Rental_Count'
+SELECT f.title AS 'Movie', COUNT(f.film_id) AS 'Rental_Count'
 FROM film f 
 JOIN inventory i ON f.film_id = i.film_id
 JOIN rental r ON r.inventory_id = i.inventory_id
@@ -187,9 +178,9 @@ GROUP by s.store_id;
 -- 7g. Write a query to display for each store its store ID, city, and country.
 SELECT s.store_id AS 'Store ID', c.city AS 'City', co.country AS 'Country'
 FROM store s
-LEFT JOIN address a ON s.address_id = a.address_id
-LEFT JOIN city c ON a.city_id = c.city_id
-LEFT JOIN country co ON c.country_id = co.country_id;
+JOIN address a ON s.address_id = a.address_id
+JOIN city c ON a.city_id = c.city_id
+JOIN country co ON c.country_id = co.country_id;
 
 -- 7h. List the top five genres in gross revenue in descending order. (Hint: you may need to use the following tables: category, film_category, inventory, payment, and rental.)
 SELECT name AS 'Genres', SUM(p.amount) AS 'Revenue'
@@ -219,4 +210,4 @@ SELECT *
 FROM top_5_genres_view;
  
 -- 8c. You find that you no longer need the view top_five_genres. Write a query to delete it.
-DROP view top_5_genres_view;
+DROP VIEW top_5_genres_view;
