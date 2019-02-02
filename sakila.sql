@@ -28,7 +28,7 @@ ORDER BY last_name, first_name;
 -- 2d. Using IN, display the country_id and country columns of the following countries: Afghanistan, Bangladesh, and China:
 SELECT country_id AS 'ID', country AS 'Country'
 FROM country
-WHERE country IN ('Afghanistan', 'Bangladesh', 'China')
+WHERE country IN ('Afghanistan', 'Bangladesh', 'China');
 
 -- 3a. You want to keep a description of each actor. You don't think you will be performing queries on a description, so create a column in the table actor named description and use the data type BLOB (Make sure to research the type BLOB, as the difference between it and VARCHAR are significant).
 ALTER TABLE actor
