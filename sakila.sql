@@ -52,12 +52,12 @@ HAVING COUNT(last_name) >= 2;
 -- 4c. The actor HARPO WILLIAMS was accidentally entered in the actor table as GROUCHO WILLIAMS. Write a query to fix the record.
 UPDATE actor
 SET first_name='HARPO'
-WHERE first_name = 'GROUCHO' AND last_name = 'WILLIAMS'
+WHERE first_name = 'GROUCHO' AND last_name = 'WILLIAMS';
 
 -- 4d. Perhaps we were too hasty in changing GROUCHO to HARPO. It turns out that GROUCHO was the correct name after all! In a single query, if the first name of the actor is currently HARPO, change it to GROUCHO.
 UPDATE actor
 SET first_name='GROUCHO'
-WHERE first_name = 'HARPO' AND last_name = 'WILLIAMS'
+WHERE first_name = 'HARPO' AND last_name = 'WILLIAMS';
 
 -- 5a. You cannot locate the schema of the address table. Which query would you use to re-create it?
 SHOW CREATE TABLE address;
